@@ -11,7 +11,7 @@ static int g_AdapterNo;
 static int g_FrontendNo;
 static int g_DemuxNo;
 static int g_DvrNo;
-static int g_Type;			// 0 : ISDB_S / 1 : ISDB_T / 2 : DVB_C
+static int g_Type = -1;		// -1 : auto / 0 : ISDB_S / 1 : ISDB_T / 2 : DVB_C
 static int g_GetCnrMode;	// 0 : FE_READ_SIGNAL_STRENGTH / 1 : FE_READ_SNR / 2 : DTV_STAT_CNR
 static BOOL g_UseLNB;
 static BOOL g_UseServiceID;
@@ -407,13 +407,6 @@ const BOOL cBonDriverDVB::OpenTuner(void)
 	if (m_bTuner)
 		return TRUE;
 
-	if ((g_Type == 2) && g_UseServiceID)
-	{
-		// DVB-CのサービスIDによる分離は未対応
-		::fprintf(stderr, "OpenTuner() not supported USESERVICEID in DERIVERYSYSTEM=2\n");
-		return FALSE;
-	}
-
 	{
 		std::ostringstream os;
 		os << "/dev/dvb/adapter" << g_AdapterNo << "/frontend" << g_FrontendNo;
@@ -430,7 +423,23 @@ const BOOL cBonDriverDVB::OpenTuner(void)
 	prop[0].cmd = DTV_DELIVERY_SYSTEM;
 	props.props = prop;
 	props.num = 1;
-	char *p;
+	char *p = nullptr;
+	if (g_Type < 0) // auto
+	{
+		const enum fe_delivery_system systems[] = {SYS_DVBC_ANNEX_A, SYS_ISDBS, SYS_ISDBT};
+		const int gtypes[] = {2, 0, 1};
+		const int size = sizeof(systems) / sizeof(systems[0]);
+		for (auto i = 0; i < size; i++)
+		{
+			prop[0].u.data = systems[i];
+			if (::ioctl(m_fefd, FE_SET_PROPERTY, &props) < 0)
+				continue;
+
+			g_Type = gtypes[i];
+			break;
+		}
+	}
+
 	if (g_Type == 0)	// ISDB_S
 	{
 		prop[0].u.data = SYS_ISDBS;
@@ -456,8 +465,16 @@ const BOOL cBonDriverDVB::OpenTuner(void)
 		::fprintf(stderr, "OpenTuner() ioctl(FE_SET_PROPERTY) delivery system error: adapter%d\n", g_AdapterNo);
 		goto err1;
 	}
+
 	if (Convert(p, g_strSpace, sizeof(g_strSpace)) < 0)
 		goto err1;
+
+	if ((g_Type == 2) && g_UseServiceID)
+	{
+		// DVB-CのサービスIDによる分離には未対応
+		::fprintf(stderr, "OpenTuner() not supported USESERVICEID in DERIVERYSYSTEM=2\n");
+		goto err1;
+	}
 
 	{
 		std::ostringstream os;

@@ -31,15 +31,12 @@ cp ../BonDriver_DVBC.so.conf BonDriver_DVB_C.so.conf
 
 vi BonDriver_DVB_S.so.conf
 #ADAPTER_NO=0
-#DELIVERYSYSTEM=0
 
 vi BonDriver_DVB_T.so.conf
 #ADAPTER_NO=1
-#DELIVERYSYSTEM=1
 
 vi BonDriver_DVB_C.so.conf
 #ADAPTER_NO=2
-#DELIVERYSYSTEM=2
 
 sudo cp *.so *.so.conf /usr/local/lib/edcb
 ```
