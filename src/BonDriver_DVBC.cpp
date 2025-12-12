@@ -271,9 +271,9 @@ static int Init()
 						return -3;
 					}
 					g_stChannels[idx][dw].freq.frequencyno = ::atoi(cp[2]);
-					g_stChannels[idx][dw].freq.tsid = ::strtoul(cp[3], NULL, 16);
+					g_stChannels[idx][dw].freq.tsid = ::strtoul(cp[3], NULL, 0);
 					if (g_UseServiceID)
-						g_stChannels[idx][dw].ServiceID = ::strtoul(cp[4], NULL, 10);
+						g_stChannels[idx][dw].ServiceID = ::strtoul(cp[4], NULL, 0);
 					g_stChannels[idx][dw].bUnused = FALSE;
 				}
 			}
